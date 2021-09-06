@@ -4,7 +4,14 @@
 
 // ignore: unused_import
 import 'package:capnp/capnp.dart' as capnp;
+// ignore: unused_import
+import 'package:capnp/rpc/capnp_rpc.dart' as capnp_rpc;
 import 'dart:core' as core;
+// ignore: unused_import
+import 'dart:async' as async;
+
+// ignore: unused_import
+import 'addressbook_capnp.dart' as addressbook_capnp_;
 
 const core.int QUX = 123;
 
@@ -38,6 +45,8 @@ class PersonBuilder {
   static capnp.BuilderReturn<PersonBuilder> build() {
     return capnp.BuilderReturn(capnp.Layout(1, 4), (root) => PersonBuilder(root));
   }
+
+  PersonReader get reader => PersonReader(segmentView, dataSectionLengthInWords);
 
   set id (core.int value) => segmentView.setUInt32(0, value);
   set name (core.String value) => segmentView.setText(dataSectionLengthInWords + 0, value);
@@ -74,6 +83,8 @@ class PhoneNumberBuilder {
   static capnp.BuilderReturn<PhoneNumberBuilder> build() {
     return capnp.BuilderReturn(capnp.Layout(1, 1), (root) => PhoneNumberBuilder(root));
   }
+
+  PhoneNumberReader get reader => PhoneNumberReader(segmentView, dataSectionLengthInWords);
 
   set number (core.String value) => segmentView.setText(dataSectionLengthInWords + 0, value);
   set type (Type value) => segmentView.setUInt16(0, value.index);
@@ -141,6 +152,8 @@ class EmploymentBuilder {
   ) =>
       EmploymentBuilder(segmentView, dataSectionLengthInWords);
 
+  EmploymentReader get reader => EmploymentReader(segmentView, dataSectionLengthInWords);
+
   set unemployed(capnp.NullableVoid value) {
     segmentView.setUInt16(4, EmploymentTag.Unemployed.index);
     segmentView.setVoid(0, value);
@@ -187,6 +200,8 @@ class AddressBookBuilder {
     return capnp.BuilderReturn(capnp.Layout(0, 1), (root) => AddressBookBuilder(root));
   }
 
+  AddressBookReader get reader => AddressBookReader(segmentView, dataSectionLengthInWords);
+
   capnp.CompositeList<PersonBuilder> initPeople(core.int len) =>
     segmentView.newCompositeList(dataSectionLengthInWords + 0, len, Person().builder);
 }
@@ -217,6 +232,8 @@ class MapBuilder<K,V> {
   static capnp.BuilderReturn<MapBuilder<K,V>> build<K,V>() {
     return capnp.BuilderReturn(capnp.Layout(0, 1), (root) => MapBuilder(root));
   }
+
+  MapReader get reader => MapReader(segmentView, dataSectionLengthInWords);
 
   capnp.CompositeList<EntryBuilder> initEntries(core.int len) =>
     segmentView.newCompositeList(dataSectionLengthInWords + 0, len, Entry().builder);
@@ -250,6 +267,8 @@ class EntryBuilder<K,V> {
     return capnp.BuilderReturn(capnp.Layout(0, 2), (root) => EntryBuilder(root));
   }
 
-  set key (capnp.Pointer value) => segmentView.setAnyPointer(dataSectionLengthInWords + 0, value);
-  set value (capnp.Pointer value) => segmentView.setAnyPointer(dataSectionLengthInWords + 1, value);
+  EntryReader get reader => EntryReader(segmentView, dataSectionLengthInWords);
+
+  capnp.AnyPointerBuilder get initKey => segmentView.setAnyPointer(dataSectionLengthInWords + 0);
+  capnp.AnyPointerBuilder get initValue => segmentView.setAnyPointer(dataSectionLengthInWords + 1);
 }

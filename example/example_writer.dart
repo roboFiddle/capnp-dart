@@ -4,7 +4,7 @@ import 'package:capnp/capnp.dart';
 import 'addressbook_capnp.dart' as address_book;
 
 void main() async {
-  Message msg = Message.empty();
+  var msg = CapnpMessage.empty();
   address_book.AddressBookBuilder builder = msg.initRoot(address_book.AddressBookBuilder.build);
   var peopleList = builder.initPeople(2);
 

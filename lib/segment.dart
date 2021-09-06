@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:capnp/capnp.dart';
+import 'package:capnp/rpc/capnp_rpc.dart';
 
 import 'constants.dart';
 import 'message.dart';
@@ -11,7 +12,7 @@ import 'pointer.dart';
 class Segment {
   Segment(this.message, this.data) : assert(data.lengthInBytes % CapnpConstants.bytesPerWord == 0);
 
-  Message message;
+  CapnpMessage message;
   ByteData data;
   int get lengthInBytes => data.lengthInBytes;
 
@@ -75,11 +76,11 @@ class SegmentView {
 
   void setBool(int offsetInBits, bool value, {bool defaultValue = false}) {
     value ^= defaultValue;
-    int valueAsInt = value as int;
+    int valueAsInt = value ? 1 : 0;
     int byteOffset = offsetInBits ~/ CapnpConstants.bitsPerByte;
     int byte = data.getUint8(byteOffset);
     final bitIndex = offsetInBits % CapnpConstants.bitsPerByte;
-    byte &= (valueAsInt << bitIndex);
+    byte |= (valueAsInt << bitIndex);
     data.setUint8(byteOffset, byte);
   }
 
@@ -142,6 +143,10 @@ class SegmentView {
   UnmodifiableUint8ListView getData(int offsetInWords) {
     final pointer = ListPointer.resolvedFromView(subview(offsetInWords, 1));
     return CapnpUInt8List(pointer).value;
+  }
+
+  void setData(int offsetInWords, ByteBuffer data) {
+    throw UnimplementedError;
   }
 
   // Nested structs:
@@ -246,8 +251,17 @@ class SegmentView {
     return list;
   }
 
+  CapabilityPointer getCapabilityPointer(int offsetInWords) {
+    return CapabilityPointer.fromView(subview(offsetInWords, 1));
+  }
+
   CapabilityList newCapabilityList(int offsetInWords, int len) {
     throw UnimplementedError;
+  }
+
+  T getClient<T>(int offsetInWords, ClientFactory<T> factory) {
+    var ptr = CapabilityPointer.fromView(subview(offsetInWords, 1));
+    return factory(segment.message.network!.resolveCapability(ptr, segment.message.capTable!)!);
   }
 
   CapabilityList getCapabilityList(int offsetInWords) {
@@ -255,10 +269,10 @@ class SegmentView {
   }
 
   Pointer getAnyPointer(int offsetInWords) {
-    throw UnimplementedError;
+    return Pointer.resolveAnyPointer(subview(offsetInWords, 1));
   }
 
-  void setAnyPointer(int offsetInWords, Pointer P) {
-    throw UnimplementedError;
+  AnyPointerBuilder setAnyPointer(int offsetInWords) {
+    return AnyPointerBuilder(subview(offsetInWords, 1));
   }
 }

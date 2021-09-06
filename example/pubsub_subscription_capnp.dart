@@ -19,15 +19,24 @@ import 'pubsub_subscriber_capnp.dart' as pubsub_capnp_subscriber_;
 // ignore: unused_import
 import 'pubsub_capnp.dart' as pubsub_capnp_;
 
-class Subscription {
-  capnp_rpc.ClientFactory<pubsub_capnp_subscription_.SubscriptionClient> clientBuilder = pubsub_capnp_subscription_.SubscriptionClient.fromRaw;
+class SubscriptionClient {
+  capnp_rpc.RawClient innerClient;
+
+  SubscriptionClient(this.innerClient);
+  static SubscriptionClient fromRaw(capnp_rpc.RawClient client) => SubscriptionClient(client);
+
 }
 
-class Publisher {
-  capnp_rpc.ClientFactory<pubsub_capnp_publisher_.PublisherClient> clientBuilder = pubsub_capnp_publisher_.PublisherClient.fromRaw;
-}
+class SubscriptionServer  extends capnp_rpc.ServerDispatch {
+  @core.override
+  async.FutureOr<capnp_rpc.Status> dispatch(core.int interfaceId, core.int methodId, capnp.StructPointer params, capnp_rpc.PayloadBuilder results) {
+    switch(interfaceId) {
+      case 0xdf06b521cfa266f7:
+        switch(methodId) {
+        }
+    }
+    return capnp_rpc.Status.unimplemented("Method not implemented.");
+  }
 
-class Subscriber {
-  capnp_rpc.ClientFactory<pubsub_capnp_subscriber_.SubscriberClient> clientBuilder = pubsub_capnp_subscriber_.SubscriberClient.fromRaw;
 }
 

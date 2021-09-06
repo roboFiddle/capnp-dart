@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:capnp/rpc/capnp_rpc.dart';
 import 'package:convert/convert.dart';
 
 import 'constants.dart';
@@ -10,16 +12,17 @@ import 'objects/struct.dart';
 import 'pointer.dart';
 import 'segment.dart';
 
-class Message {
-  factory Message.fromBuffer(ByteBuffer buffer) {
+class CapnpMessage {
+  factory CapnpMessage.fromBuffer(ByteBuffer buffer) {
     // https://capnproto.org/encoding.html#serialization-over-a-stream
     final data = buffer.asByteData();
     final segmentCount = 1 + data.getUint32(0, Endian.little);
 
-    final message = Message._();
+    final message = CapnpMessage._();
     var offsetInWords = ((1 + segmentCount) / 2).ceil();
     for (var i = 0; i < segmentCount; i++) {
       final segmentLengthInWords = data.getUint32(4 + i * 4, Endian.little);
+      // print("$i $segmentLengthInWords from offset $offsetInWords in buffer len ${buffer.lengthInBytes}");
       final segmentData = buffer.asByteData(
         offsetInWords * CapnpConstants.bytesPerWord,
         segmentLengthInWords * CapnpConstants.bytesPerWord,
@@ -31,15 +34,53 @@ class Message {
     return message;
   }
 
-  factory Message.empty() {
-    return Message._();
+  static StreamSubscription streamListener(Stream<Uint8List> read, Function(CapnpMessage) callback) {
+    List<int> bytes = [];
+    int waitingForSegments = 0;
+    int messageLength = 0;
+    return read.listen((event) {
+      if (bytes.length == 0) {
+        //first word of message - get number of segment words
+        var buffer = event.buffer.asUint32List(0, event.buffer.lengthInBytes ~/ 4);
+        int numSegments = buffer[0] + 1;
+        waitingForSegments = (numSegments - 1) * 4;
+        if (waitingForSegments % 8 != 0) {
+          waitingForSegments += 4;
+        }
+        messageLength = 8 + buffer[1] * 8;
+      } else if (waitingForSegments != 0) {
+        // segment lengths
+        var lengths = event.buffer.asUint32List(0, event.buffer.lengthInBytes ~/ 4);
+        for (int length in lengths) {
+          messageLength += length * 8;
+        }
+        messageLength += event.lengthInBytes;
+        waitingForSegments -= event.lengthInBytes;
+      }
+      bytes += event;
+      if (waitingForSegments == 0 && bytes.length == messageLength) {
+        callback(CapnpMessage.fromBuffer(Uint8List.fromList(bytes).buffer));
+        bytes = [];
+        waitingForSegments = 0;
+        messageLength = 0;
+      }
+    });
+  }
+
+  factory CapnpMessage.empty() {
+    return CapnpMessage._();
   }
 
   // ignore: prefer_collection_literals, Literals create an unmodifiable list.
-  Message._() : _segments = <Segment>[];
+  CapnpMessage._() : _segments = <Segment>[];
 
   final List<Segment> _segments;
   List<Segment> get segments => UnmodifiableListView(_segments);
+
+  RpcSystem? network;
+  UnmodifiableCompositeListView<CapDescriptorReader>? capTable;
+
+  List<RawClient> exportedCaps = [];
 
   void _addSegment(Segment segment) {
     assert(segment.message == this);
@@ -95,7 +136,7 @@ class Message {
     StructPointer.save(seg.fullView(), 0, 0, built.layout.dataSectionLengthInWords, built.layout.numPointers);
     int segmentID = addSegment(seg);
     InterSegmentPointer.save(view, offsetIntoView, InterSegmentPointerType.Simple, 0, segmentID);
-    return built.builder(seg.fullView());
+    return built.builder(seg.view(1, built.layout.words()));
   }
 
   CompositeList<T> newCompositeListSegment<T>(

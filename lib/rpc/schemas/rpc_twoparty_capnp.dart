@@ -4,8 +4,14 @@
 
 // ignore: unused_import
 import 'package:capnp/capnp.dart' as capnp;
+// ignore: unused_import
+import 'package:capnp/rpc/capnp_rpc.dart' as capnp_rpc;
 import 'dart:core' as core;
+// ignore: unused_import
+import 'dart:async' as async;
 
+// ignore: unused_import
+import 'rpc_twoparty_capnp.dart' as rpc_twoparty_capnp_;
 
 
 enum Side {
@@ -210,5 +216,5 @@ class JoinResultBuilder {
 
   set joinId (core.int value) => segmentView.setUInt32(0, value);
   set succeeded (core.bool value) => segmentView.setBool(32, value);
-  set cap (capnp.Pointer value) => segmentView.setAnyPointer(dataSectionLengthInWords + 0, value);
+  capnp.AnyPointerBuilder get initCap => segmentView.setAnyPointer(dataSectionLengthInWords + 0);
 }

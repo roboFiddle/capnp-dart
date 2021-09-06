@@ -4,8 +4,14 @@
 
 // ignore: unused_import
 import 'package:capnp/capnp.dart' as capnp;
+// ignore: unused_import
+import 'package:capnp/rpc/capnp_rpc.dart' as capnp_rpc;
 import 'dart:core' as core;
+// ignore: unused_import
+import 'dart:async' as async;
 
+// ignore: unused_import
+import 'rpc_capnp.dart' as rpc_capnp_;
 
 
 class Message {
@@ -179,10 +185,11 @@ class MessageBuilder {
     segmentView.setStruct(dataSectionLengthInWords + 0, value);
   }
 
-  set obsoleteSave(capnp.Pointer value) {
+  capnp.AnyPointerBuilder get initObsoleteSave {
     segmentView.setUInt16(0, MessageTag.ObsoleteSave.index);
-    segmentView.setAnyPointer(dataSectionLengthInWords + 0, value);
+    return segmentView.setAnyPointer(dataSectionLengthInWords + 0);
   }
+
   BootstrapBuilder initBootstrap() {
     segmentView.setUInt16(0, MessageTag.Bootstrap.index);
     return segmentView.newStruct(dataSectionLengthInWords + 0, Bootstrap().builder);
@@ -193,10 +200,11 @@ class MessageBuilder {
     segmentView.setStruct(dataSectionLengthInWords + 0, value);
   }
 
-  set obsoleteDelete(capnp.Pointer value) {
+  capnp.AnyPointerBuilder get initObsoleteDelete {
     segmentView.setUInt16(0, MessageTag.ObsoleteDelete.index);
-    segmentView.setAnyPointer(dataSectionLengthInWords + 0, value);
+    return segmentView.setAnyPointer(dataSectionLengthInWords + 0);
   }
+
   ProvideBuilder initProvide() {
     segmentView.setUInt16(0, MessageTag.Provide.index);
     return segmentView.newStruct(dataSectionLengthInWords + 0, Provide().builder);
@@ -286,7 +294,7 @@ class BootstrapBuilder {
   BootstrapReader get reader => BootstrapReader(segmentView, dataSectionLengthInWords);
 
   set questionId (core.int value) => segmentView.setUInt32(0, value);
-  set deprecatedObjectId (capnp.Pointer value) => segmentView.setAnyPointer(dataSectionLengthInWords + 0, value);
+  capnp.AnyPointerBuilder get initDeprecatedObjectId => segmentView.setAnyPointer(dataSectionLengthInWords + 0);
 }
 
 class Call {
@@ -353,7 +361,7 @@ class SendResultsToReader {
       SendResultsToReader(segmentView, dataSectionLengthInWords);
 
   SendResultsToTag? which() {
-    return segmentView.getEnum(3, SendResultsToTag.values);
+    return segmentView.getEnum(6, SendResultsToTag.values);
   }
 
   capnp.NullableVoid? get caller {
@@ -393,10 +401,11 @@ class SendResultsToBuilder {
     segmentView.setUInt16(6, SendResultsToTag.Yourself.index);
     segmentView.setVoid(0, value);
   }
-  set thirdParty(capnp.Pointer value) {
+  capnp.AnyPointerBuilder get initThirdParty {
     segmentView.setUInt16(6, SendResultsToTag.ThirdParty.index);
-    segmentView.setAnyPointer(dataSectionLengthInWords + 2, value);
+    return segmentView.setAnyPointer(dataSectionLengthInWords + 2);
   }
+
 }
 
 
@@ -449,7 +458,7 @@ class ReturnReader {
       return segmentView.getAnyPointer(dataSectionLengthInWords + 0);
   }
   ReturnTag? which() {
-    return segmentView.getEnum(3, ReturnTag.values);
+    return segmentView.getEnum(6, ReturnTag.values);
   }
 }
 
@@ -497,10 +506,11 @@ class ReturnBuilder {
     segmentView.setUInt16(6, ReturnTag.TakeFromOtherQuestion.index);
     segmentView.setUInt32(8, value);
   }
-  set acceptFromThirdParty(capnp.Pointer value) {
+  capnp.AnyPointerBuilder get initAcceptFromThirdParty {
     segmentView.setUInt16(6, ReturnTag.AcceptFromThirdParty.index);
-    segmentView.setAnyPointer(dataSectionLengthInWords + 0, value);
+    return segmentView.setAnyPointer(dataSectionLengthInWords + 0);
   }
+
 }
 enum ReturnTag {
   Results,
@@ -573,7 +583,7 @@ class ResolveReader {
       return segmentView.getStruct(dataSectionLengthInWords + 0, Exception().reader);
   }
   ResolveTag? which() {
-    return segmentView.getEnum(2, ResolveTag.values);
+    return segmentView.getEnum(4, ResolveTag.values);
   }
 }
 
@@ -792,7 +802,7 @@ class ProvideBuilder {
   MessageTargetBuilder initTarget() =>
     segmentView.newStruct(dataSectionLengthInWords + 0, MessageTarget().builder);
   set target (MessageTargetReader value) => segmentView.setStruct(dataSectionLengthInWords + 0, value);
-  set recipient (capnp.Pointer value) => segmentView.setAnyPointer(dataSectionLengthInWords + 1, value);
+  capnp.AnyPointerBuilder get initRecipient => segmentView.setAnyPointer(dataSectionLengthInWords + 1);
 }
 
 class Accept {
@@ -827,7 +837,7 @@ class AcceptBuilder {
   AcceptReader get reader => AcceptReader(segmentView, dataSectionLengthInWords);
 
   set questionId (core.int value) => segmentView.setUInt32(0, value);
-  set provision (capnp.Pointer value) => segmentView.setAnyPointer(dataSectionLengthInWords + 0, value);
+  capnp.AnyPointerBuilder get initProvision => segmentView.setAnyPointer(dataSectionLengthInWords + 0);
   set embargo (core.bool value) => segmentView.setBool(32, value);
 }
 
@@ -866,7 +876,7 @@ class JoinBuilder {
   MessageTargetBuilder initTarget() =>
     segmentView.newStruct(dataSectionLengthInWords + 0, MessageTarget().builder);
   set target (MessageTargetReader value) => segmentView.setStruct(dataSectionLengthInWords + 0, value);
-  set keyPart (capnp.Pointer value) => segmentView.setAnyPointer(dataSectionLengthInWords + 1, value);
+  capnp.AnyPointerBuilder get initKeyPart => segmentView.setAnyPointer(dataSectionLengthInWords + 1);
 }
 
 class MessageTarget {
@@ -896,7 +906,7 @@ class MessageTargetReader {
       return segmentView.getStruct(dataSectionLengthInWords + 0, PromisedAnswer().reader);
   }
   MessageTargetTag? which() {
-    return segmentView.getEnum(2, MessageTargetTag.values);
+    return segmentView.getEnum(4, MessageTargetTag.values);
   }
 }
 
@@ -960,7 +970,7 @@ class PayloadBuilder {
 
   PayloadReader get reader => PayloadReader(segmentView, dataSectionLengthInWords);
 
-  set content (capnp.Pointer value) => segmentView.setAnyPointer(dataSectionLengthInWords + 0, value);
+  capnp.AnyPointerBuilder get initContent => segmentView.setAnyPointer(dataSectionLengthInWords + 0);
   capnp.CompositeList<CapDescriptorBuilder> initCapTable(core.int len) =>
     segmentView.newCompositeList(dataSectionLengthInWords + 1, len, CapDescriptor().builder);
 }
@@ -1194,7 +1204,7 @@ class ThirdPartyCapDescriptorBuilder {
 
   ThirdPartyCapDescriptorReader get reader => ThirdPartyCapDescriptorReader(segmentView, dataSectionLengthInWords);
 
-  set id (capnp.Pointer value) => segmentView.setAnyPointer(dataSectionLengthInWords + 0, value);
+  capnp.AnyPointerBuilder get initId => segmentView.setAnyPointer(dataSectionLengthInWords + 0);
   set vineId (core.int value) => segmentView.setUInt32(0, value);
 }
 

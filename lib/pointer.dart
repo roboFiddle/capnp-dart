@@ -1,3 +1,5 @@
+import 'package:capnp/rpc/capnp_rpc.dart';
+
 import 'constants.dart';
 import 'objects/list.dart';
 import 'objects/struct.dart';
@@ -33,9 +35,34 @@ abstract class Pointer {
       case 0x02:
         return PointerType.interSegment;
       case 0x03:
-        throw StateError('Capability pointers are not yet supported.');
+        return PointerType.capability;
       default:
         throw FormatException("Unsigned 2-bit number can't be outside 0 – 3.");
+    }
+  }
+
+  static Pointer resolveAnyPointer(SegmentView segmentView) {
+    while (typeOf(segmentView) == PointerType.interSegment) {
+      segmentView = InterSegmentPointer.fromView(segmentView).target;
+    }
+    switch (typeOf(segmentView)) {
+      case PointerType.struct:
+        return Pointer.resolvedFromSegmentView(
+          segmentView,
+          (it) => StructPointer.fromView(it),
+        );
+      case PointerType.list:
+        return Pointer.resolvedFromSegmentView(
+          segmentView,
+          (it) => ListPointer.fromView(it),
+        );
+      case PointerType.interSegment:
+        throw UnsupportedError;
+      case PointerType.capability:
+        return Pointer.resolvedFromSegmentView(
+          segmentView,
+          (it) => CapabilityPointer.fromView(it),
+        );
     }
   }
 
@@ -189,5 +216,33 @@ class InterSegmentPointer extends Pointer {
 
     view.setUInt32(offsetInWordsIntoSegment * CapnpConstants.bytesPerWord, leading);
     view.setUInt32(offsetInWordsIntoSegment * CapnpConstants.bytesPerWord + 4, segmentID);
+  }
+}
+
+class CapabilityPointer extends Pointer {
+  CapabilityPointer.fromView(SegmentView segmentView)
+      : assert(Pointer.typeOf(segmentView) == PointerType.capability),
+        super(segmentView);
+
+  int get indexInTable => segmentView.getUInt32(4);
+
+  static void save(SegmentView view, int offsetInWordsIntoSegment, int indexInTable) {
+    view.setUInt32(offsetInWordsIntoSegment * CapnpConstants.bytesPerWord, 0x3);
+    view.setUInt32(offsetInWordsIntoSegment * CapnpConstants.bytesPerWord + 4, indexInTable);
+  }
+}
+
+class AnyPointerBuilder {
+  SegmentView view;
+
+  AnyPointerBuilder(this.view);
+
+  void initCap(RawClient client) {
+    view.segment.message.exportedCaps.add(client);
+    CapabilityPointer.save(view, 0, view.segment.message.exportedCaps.length - 1);
+  }
+
+  T initStruct<T>(StructBuilderFactory<T> factory) {
+    return view.newStruct(0, factory);
   }
 }
